@@ -6,6 +6,7 @@ import html
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from agent import constants as ac
 from eval import constants as c
 from eval.gate import evaluate_gate, load_thresholds
 from eval.compare import compare_runs
@@ -109,7 +110,7 @@ def render(comparison: Dict[str, Any], gate_result: Dict[str, Any]) -> str:
 
     def desc(m: Dict[str, Any]) -> str:
         ag = m[c.RM_AGENT]
-        return f"{ag['model_id']} · top_k={ag['top_k']} · prompt {ag[c.RM_PROMPT_HASH][7:15]}"
+        return f"{ag[ac.CFG_MODEL_ID]} · top_k={ag[ac.CFG_TOP_K]} · prompt {ag[c.RM_PROMPT_HASH][7:15]}"
 
     parts: List[str] = [
         f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"

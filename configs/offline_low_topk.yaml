@@ -1,0 +1,12 @@
+# Offline induced regression: top_k=1 (no API key, no cost).
+# The fake model answers with the first sentence of the top passage, or
+# NOT_FOUND when retrieval returns nothing relevant. Use with
+# `score --deterministic-only`.
+name: offline_low_topk
+provider: fake
+model_id: fake-extractive
+temperature: null
+max_tokens: 600
+top_k: 1
+prompt_file: answer_v1.txt
+timeout_s: 10

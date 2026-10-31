@@ -5,12 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Optional, Type
 
+import anthropic
 import yaml
 from deepeval.models import DeepEvalBaseLLM
 from pydantic import BaseModel
 
 from agent.llm import build_chat_model
 from eval import constants as c
+
+STRUCTURED_METHOD = "json_schema"
 
 
 def load_judge_config(path: Path = c.JUDGE_CONFIG_PATH) -> Dict[str, Any]:
@@ -32,9 +35,11 @@ def load_judge_config(path: Path = c.JUDGE_CONFIG_PATH) -> Dict[str, Any]:
 class ClaudeJudge(DeepEvalBaseLLM):
     """DeepEval judge backed by a Claude model through LangChain.
 
-    Structured outputs use tool calling (``with_structured_output``). Token
-    usage is accumulated on the instance so judge cost can be attributed to a
-    case; create one instance per case for per-case accounting.
+    Structured outputs use Claude's native JSON-schema output format
+    (``with_structured_output(method="json_schema")``). If the API rejects a
+    schema, the judge falls back to a plain call and DeepEval parses the JSON
+    from text. Token usage is accumulated on the instance so judge cost can be
+    attributed; create one instance per case and metric.
 
     Parameters
     ----------
@@ -66,6 +71,7 @@ class ClaudeJudge(DeepEvalBaseLLM):
         self.input_tokens = 0
         self.output_tokens = 0
         self.calls = 0
+        self.structured = True
         super().__init__(model_id)
 
     @classmethod
@@ -141,13 +147,18 @@ class ClaudeJudge(DeepEvalBaseLLM):
         Any
             A schema instance when parsing succeeds, else raw text.
         """
-        if schema is None:
-            msg = self.model.invoke(prompt)
-            self._account(msg)
-            return self._text(msg)
-        out = self.model.with_structured_output(schema, include_raw=True).invoke(prompt)
-        self._account(out["raw"])
-        return out["parsed"] if out.get("parsed") is not None else self._text(out["raw"])
+        if schema is not None and self.structured:
+            try:
+                out = self.model.with_structured_output(
+                    schema, method=STRUCTURED_METHOD, include_raw=True
+                ).invoke(prompt)
+                self._account(out["raw"])
+                return out["parsed"] if out.get("parsed") is not None else self._text(out["raw"])
+            except anthropic.BadRequestError:
+                self.structured = False
+        msg = self.model.invoke(prompt)
+        self._account(msg)
+        return self._text(msg)
 
     async def a_generate(self, prompt: str, schema: Optional[Type[BaseModel]] = None, **kwargs: Any) -> Any:
         """Asynchronous judge call.
@@ -164,13 +175,28 @@ class ClaudeJudge(DeepEvalBaseLLM):
         Any
             A schema instance when parsing succeeds, else raw text.
         """
-        if schema is None:
-            msg = await self.model.ainvoke(prompt)
-            self._account(msg)
-            return self._text(msg)
-        out = await self.model.with_structured_output(schema, include_raw=True).ainvoke(prompt)
-        self._account(out["raw"])
-        return out["parsed"] if out.get("parsed") is not None else self._text(out["raw"])
+        if schema is not None and self.structured:
+            try:
+                out = await self.model.with_structured_output(
+                    schema, method=STRUCTURED_METHOD, include_raw=True
+                ).ainvoke(prompt)
+                self._account(out["raw"])
+                return out["parsed"] if out.get("parsed") is not None else self._text(out["raw"])
+            except anthropic.BadRequestError:
+                self.structured = False
+        msg = await self.model.ainvoke(prompt)
+        self._account(msg)
+        return self._text(msg)
+
+    def supports_log_probs(self) -> bool:
+        """Log-probabilities are not exposed; GEval falls back to schema scoring.
+
+        Returns
+        -------
+        bool
+            Always False.
+        """
+        return False
 
     def get_model_name(self, *args: Any, **kwargs: Any) -> str:
         """Model name shown by DeepEval.

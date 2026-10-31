@@ -7,6 +7,7 @@ from typing import List
 import duckdb
 import pandas as pd
 
+from agent import constants as ac
 from eval import constants as c
 from eval.io import read_json
 
@@ -62,7 +63,7 @@ def history() -> pd.DataFrame:
     models = {}
     for rid in df[c.CT_RUN_ID]:
         m = read_json(c.RUNS_DIR / rid / c.RUN_MANIFEST_FILE)
-        models[rid] = (m[c.RM_AGENT]["model_id"], m[c.RM_DATASET][c.RM_DATASET_VERSION])
+        models[rid] = (m[c.RM_AGENT][ac.CFG_MODEL_ID], m[c.RM_DATASET][c.RM_DATASET_VERSION])
     df.insert(1, "model", df[c.CT_RUN_ID].map(lambda r: models[r][0]))
     df.insert(2, "dataset", df[c.CT_RUN_ID].map(lambda r: models[r][1]))
     return df

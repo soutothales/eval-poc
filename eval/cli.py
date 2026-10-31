@@ -42,6 +42,18 @@ def _print_issues(issues) -> int:
 
 
 def cmd_dataset_validate(args: argparse.Namespace) -> int:
+    """Run all dataset checks against the last release tag.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from agent.retriever import corpus_index, corpus_version
     from eval.versioning.manifest import load_core, load_manifest
     from eval.versioning.release import previous_release
@@ -66,6 +78,18 @@ def cmd_dataset_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_dataset_rehash(args: argparse.Namespace) -> int:
+    """Recompute content_hash for every case.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.versioning.manifest import load_cases, rehash_cases, save_cases
 
     cases = load_cases()
@@ -77,6 +101,18 @@ def cmd_dataset_rehash(args: argparse.Namespace) -> int:
 
 
 def cmd_dataset_diff(args: argparse.Namespace) -> int:
+    """Print the diff and inferred bump against the last release tag.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.versioning.diff import diff_cases
     from eval.versioning.manifest import load_cases, load_core
     from eval.versioning.release import previous_release
@@ -95,6 +131,18 @@ def cmd_dataset_diff(args: argparse.Namespace) -> int:
 
 
 def cmd_dataset_release(args: argparse.Namespace) -> int:
+    """Validate, bump the version, write the manifest and tag the release.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.versioning.release import release
 
     res = release(
@@ -112,6 +160,18 @@ def cmd_dataset_release(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    """Run the generate phase.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.generate import generate
 
     run_id = asyncio.run(generate(
@@ -123,6 +183,18 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_score(args: argparse.Namespace) -> int:
+    """Run the score phase and print the summary.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.score import score_run
 
     summary = asyncio.run(score_run(args.run_id, deterministic_only=args.deterministic_only, rescore=args.rescore))
@@ -131,6 +203,13 @@ def cmd_score(args: argparse.Namespace) -> int:
 
 
 def _print_summary(summary) -> None:
+    """Print a run summary as a compact table.
+
+    Parameters
+    ----------
+    summary: Dict[str, Any]
+        Output of :func:`eval.summary.summarize`.
+    """
     print(f"\nrun {summary[c.SUM_RUN_ID]}: {summary[c.SUM_N_CASES]} cases, "
           f"{summary[c.SUM_N_ERRORS]} agent errors, {summary.get('n_judge_errors', 0)} judge errors")
     print(f"{'metric':24} {'mean':>7} {'pass':>7} {'n':>4}")
@@ -152,6 +231,18 @@ def _print_summary(summary) -> None:
 
 
 def cmd_compare(args: argparse.Namespace) -> int:
+    """Print a paired comparison of two runs.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.compare import compare_runs
 
     res = compare_runs(args.run_a, args.run_b)
@@ -165,14 +256,29 @@ def cmd_compare(args: argparse.Namespace) -> int:
         print(f"{r[c.CMP_METRIC]:24} {r[c.CMP_SCOPE]:14} {r[c.CMP_MEAN_A]:6.3f} {r[c.CMP_MEAN_B]:6.3f} "
               f"{r[c.CMP_DELTA]:+7.3f}  [{r[c.CMP_CI_LOW]:+.3f}, {r[c.CMP_CI_HIGH]:+.3f}] {r[c.CMP_N]:3d}")
     print()
+    def num(v) -> str:
+        return "—" if v is None else f"{v:.4g}"
+
     for r in res[c.CMP_OPERATIONAL]:
         rel = r[c.CMP_REL_CHANGE]
-        print(f"{r[c.CMP_METRIC]:24} {r[c.CMP_VALUE_A]!s:>14} -> {r[c.CMP_VALUE_B]!s:<14} "
+        print(f"{r[c.CMP_METRIC]:24} {num(r[c.CMP_VALUE_A]):>10} -> {num(r[c.CMP_VALUE_B]):<10} "
               + ("" if rel is None else f"{rel:+.1%}"))
     return 0
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
+    """Evaluate the regression gate; exit code 1 on breach.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.gate import gate
 
     res = gate(args.run_a, args.run_b, Path(args.thresholds))
@@ -188,6 +294,18 @@ def cmd_gate(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
+    """Write the HTML comparison report.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.report import write_report
 
     print(write_report(args.run_a, args.run_b))
@@ -195,6 +313,18 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_history(args: argparse.Namespace) -> int:
+    """Print the trend table across scored runs.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     import pandas as pd
 
     from eval.store import history
@@ -209,6 +339,18 @@ def cmd_history(args: argparse.Namespace) -> int:
 
 
 def cmd_judge_noise(args: argparse.Namespace) -> int:
+    """Measure judge and agent variance on a run.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from eval.noise import AGENT_NOISE, JUDGE_NOISE, MAX_RANGE, MEAN_STD, N_CASES, judge_noise
 
     res = asyncio.run(judge_noise(args.run_id, times=args.times, sample=args.sample))
@@ -222,6 +364,18 @@ def cmd_judge_noise(args: argparse.Namespace) -> int:
 
 
 def cmd_ask(args: argparse.Namespace) -> int:
+    """Ask the agent a single question.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        Parsed CLI arguments.
+
+    Returns
+    -------
+    int
+        Process exit code.
+    """
     from agent.graph import AgentConfig
     from eval.adapters.agent_adapter import AgentAdapter
 

@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import anthropic
 
+from agent import constants as ac
 from agent.graph import AgentConfig
 from eval import constants as c
 from eval.adapters.agent_adapter import AgentAdapter, AgentResult
@@ -191,7 +192,7 @@ async def generate(
         run_id = resume_run_id
         rdir = c.RUNS_DIR / run_id
         manifest = read_json(rdir / c.RUN_MANIFEST_FILE)
-        if manifest[c.RM_AGENT][c.CFG_MODEL_ID] != config.model_id:
+        if manifest[c.RM_AGENT][ac.CFG_MODEL_ID] != config.model_id:
             raise ValueError("resume config does not match the run's agent config")
     else:
         run_id = new_run_id(config.name)

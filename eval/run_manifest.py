@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
+import uuid
 from importlib import metadata
 from typing import Any, Dict, Optional
 
@@ -54,9 +55,11 @@ def new_run_id(config_name: str) -> str:
     Returns
     -------
     str
-        ``<UTC timestamp>-<config name>``.
+        ``<UTC timestamp>-<config name>-<4 hex>``; the suffix keeps runs
+        started in the same second distinct.
     """
-    return f"{dt.datetime.now(dt.timezone.utc).strftime(c.RUN_ID_TIME_FORMAT)}-{config_name}"
+    stamp = dt.datetime.now(dt.timezone.utc).strftime(c.RUN_ID_TIME_FORMAT)
+    return f"{stamp}-{config_name}-{uuid.uuid4().hex[:4]}"
 
 
 def build_run_manifest(run_id: str, config: AgentConfig, options: Dict[str, Any]) -> Dict[str, Any]:

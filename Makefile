@@ -3,7 +3,7 @@ CLI = $(PY) -m eval.cli
 CONFIG ?= configs/baseline.yaml
 REPEATS ?= 1
 
-.PHONY: install test validate rehash diff ask run score compare gate report history noise offline demo
+.PHONY: install test validate rehash diff ask run score compare gate report history noise offline score-offline
 
 install:
 	$(PY) -m pip install -r requirements.txt
