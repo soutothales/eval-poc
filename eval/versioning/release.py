@@ -242,6 +242,7 @@ def release(
         manifest=None,
         previous=prev.cases if prev else None,
         previous_core=prev.core if prev else None,
+        check_manifest=False,
     )
     result.issues = issues
     if any(i.level == c.LEVEL_ERROR for i in issues):

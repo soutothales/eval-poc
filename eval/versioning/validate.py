@@ -78,6 +78,7 @@ def validate(
     previous_core: Optional[CoreRegression] = None,
     allow_unreleased: bool = False,
     corpus_version: Optional[str] = None,
+    check_manifest: bool = True,
 ) -> List[Issue]:
     """Run all dataset checks.
 
@@ -99,6 +100,9 @@ def validate(
         Downgrade "dataset changed since manifest" to a warning (local dev).
     corpus_version: Optional[str]
         Current corpus fingerprint, compared with the manifest's.
+    check_manifest: bool
+        Run the manifest-sync checks (disabled during a release, which
+        rebuilds the manifest).
 
     Returns
     -------
@@ -194,6 +198,8 @@ def validate(
         issues.append(Issue(c.CHECK_APPEND_ONLY, c.LEVEL_INFO, "no previous release found; append-only check skipped"))
 
     # 5b. manifest is in sync with the cases
+    if not check_manifest:
+        return issues
     if manifest is None:
         issues.append(Issue(c.CHECK_MANIFEST, c.LEVEL_WARNING, "no manifest.json yet; run `dataset release`"))
     else:
