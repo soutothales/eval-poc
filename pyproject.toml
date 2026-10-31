@@ -1,0 +1,10 @@
+[project]
+name = "eval-poc"
+version = "0.1.0"
+description = "Local continuous-evaluation and drift pipeline for a RAG contracts agent (POC)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

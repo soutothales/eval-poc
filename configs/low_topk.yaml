@@ -1,0 +1,10 @@
+# Induced regression: same model and prompt, retriever starved to 1 passage.
+# Expected effect: multi_passage and aggregate categories collapse.
+name: low_topk
+provider: anthropic
+model_id: claude-haiku-5-5
+temperature: null
+max_tokens: 600
+top_k: 1
+prompt_file: answer_v1.txt
+timeout_s: 60

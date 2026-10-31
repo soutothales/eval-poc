@@ -1,0 +1,31 @@
+# Gate thresholds for `compare` / `gate` (run B vs baseline run A).
+# Set these ABOVE the noise floor you measure with two baseline runs and
+# `judge-noise`; otherwise the gate fires on noise.
+
+bootstrap_samples: 2000
+confidence: 0.95
+seed: 7
+# A quality breach requires the bootstrap CI upper bound to be below zero
+# (the drop is statistically distinguishable from noise).
+require_significance: true
+# Categories with fewer paired cases are reported but not gated.
+min_category_cases: 3
+
+quality:                     # max allowed absolute drop in mean score (0-1 scale)
+  answer_relevancy: {max_drop: 0.05}
+  faithfulness: {max_drop: 0.03}
+  contextual_precision: {max_drop: 0.05}
+  contextual_recall: {max_drop: 0.05}
+  contextual_relevancy: {max_drop: 0.05}
+  correctness: {max_drop: 0.05}
+  hit_rate_at_k: {max_drop: 0.05}
+  mrr: {max_drop: 0.05}
+  behavior_accuracy: {max_drop: 0.05}
+  false_refusal: {max_drop: 0.05}      # lower is better; an increase counts as a drop
+
+operational:                 # max allowed relative increase vs run A
+  agent_cost_mean: {max_rel_increase: 0.20}
+  latency_p95: {max_rel_increase: 0.30}
+  cost_per_correct_answer: {max_rel_increase: 0.20}
+
+max_error_rate: 0.05

@@ -1,0 +1,9 @@
+# Model-upgrade candidate: same index and prompt, different model.
+name: model_b
+provider: anthropic
+model_id: claude-sonnet-5-5
+temperature: null
+max_tokens: 600
+top_k: 5
+prompt_file: answer_v1.txt
+timeout_s: 60

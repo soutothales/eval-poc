@@ -1,0 +1,11 @@
+# Agent under test: baseline configuration.
+name: baseline
+provider: anthropic          # anthropic | fake (offline, no API key)
+model_id: claude-haiku-5-5
+# Newer Claude models may reject sampling parameters. Leave null to use the
+# model default; set a number only if the model accepts it.
+temperature: null
+max_tokens: 600
+top_k: 5
+prompt_file: answer_v1.txt
+timeout_s: 60
