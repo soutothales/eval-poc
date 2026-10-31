@@ -1,19 +1,20 @@
 {
   "schema_version": "1",
-  "version": "1.0.0",
-  "dataset_hash": "sha256:7f0c0fa8abfba588b0b1c55a96d0e11fa82286d6a9ec9fd192d36e934abeae4e",
-  "corpus_version": "sha256:b910ed1e84d4eba3",
-  "core_regression_hash": "sha256:968b5ccc517f6e32c82fd0527c14fbaa33d723d55ba72cbac770ec709307b36b",
+  "version": "2.0.0",
+  "dataset_hash": "sha256:92a15704da697b5759f4539179ae65c879e4bc748eba3d2a88e6877ffd2fa8ef",
+  "corpus_version": "sha256:11b10fc8e3faa138",
+  "core_regression_hash": "sha256:eae7eadc21a893d553cc49dc0862caf151babb96815a6d50eea302f22d42b813",
   "counts": {
     "by_category": {
-      "adversarial": 4,
-      "aggregate": 5,
-      "lookup": 10,
-      "multi_passage": 6,
-      "unanswerable": 5
+      "adversarial": 10,
+      "aggregate": 10,
+      "lookup": 40,
+      "multi_passage": 20,
+      "unanswerable": 20
     },
     "by_status": {
-      "active": 30
+      "active": 100,
+      "deprecated": 30
     }
   },
   "changelog": [
@@ -23,6 +24,15 @@
       "author": "Thales",
       "what": "initial golden set: 30 cases, 5 categories",
       "why": "baseline for continuous evaluation",
+      "bump": "major",
+      "typo_fixes": []
+    },
+    {
+      "version": "2.0.0",
+      "date": "2026-10-31",
+      "author": "Thales",
+      "what": "replace synthetic set with 100 CUAD cases; deprecate QA-0001..QA-0030; new core subset",
+      "why": "corpus switched to CUAD v1 (real contracts)",
       "bump": "major",
       "typo_fixes": []
     }

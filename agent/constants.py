@@ -21,6 +21,7 @@ PASSAGE_ID = "passage_id"
 PASSAGE_TITLE = "title"
 PASSAGE_SECTION = "section"
 PASSAGE_TEXT = "text"
+PASSAGE_SOURCE_FILE = "source_file"
 
 # --- Agent config keys -----------------------------------------------------
 CFG_NAME = "name"
@@ -52,3 +53,34 @@ CONTEXT_PASSAGE_TEMPLATE = "[{passage_id}] {title} — {section}\n{text}"
 CONTEXT_SEPARATOR = "\n\n"
 TEXT_ENCODING = "utf-8"
 TOKEN_PATTERN = r"[a-z0-9]+"
+STEMMER_LANGUAGE = "english"
+
+# --- CUAD ingestion --------------------------------------------------------
+CUAD_ANNOTATIONS_PATH = AGENT_DIR / "corpus" / "cuad_annotations.jsonl"
+CUAD_DOC_PREFIX = "CUAD"
+CUAD_DOC_ID_TEMPLATE = "{prefix}-{index:04d}"
+CUAD_PASSAGE_ID_TEMPLATE = "{doc_id}-{index:04d}"
+CUAD_DEFAULT_SECTION = "Preamble"
+CUAD_CLAUSE_SEPARATOR = "__"
+
+# SQuAD-style keys of CUADv1.json
+SQUAD_DATA = "data"
+SQUAD_TITLE = "title"
+SQUAD_PARAGRAPHS = "paragraphs"
+SQUAD_CONTEXT = "context"
+SQUAD_QAS = "qas"
+SQUAD_ID = "id"
+SQUAD_QUESTION = "question"
+SQUAD_ANSWERS = "answers"
+SQUAD_ANSWER_TEXT = "text"
+SQUAD_ANSWER_START = "answer_start"
+SQUAD_IS_IMPOSSIBLE = "is_impossible"
+
+# Annotation sidecar fields
+ANN_DOC_ID = "doc_id"
+ANN_CLAUSE = "clause"
+ANN_QUESTION = "question"
+ANN_HAS_ANSWER = "has_answer"
+ANN_ANSWERS = "answers"
+ANN_TEXT = "text"
+ANN_PASSAGE_IDS = "passage_ids"

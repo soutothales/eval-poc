@@ -161,8 +161,11 @@ def validate(
         if k.expected_behavior == c.BEHAVIOR_ANSWER and not k.expected_sources:
             issues.append(Issue(c.CHECK_SOURCES, c.LEVEL_ERROR, f"{k.case_id}: answer case without expected_sources"))
 
-    # 8. source references exist in the pinned corpus
+    # 8. source references of active cases exist in the pinned corpus
+    #    (deprecated cases may point at an older corpus snapshot)
     for k in cases:
+        if not k.is_active:
+            continue
         for s in k.expected_sources:
             if s.passage_id not in corpus_index.get(s.doc_id, []):
                 issues.append(Issue(c.CHECK_SOURCES, c.LEVEL_ERROR, f"{k.case_id}: {s.doc_id}/{s.passage_id} not in corpus"))

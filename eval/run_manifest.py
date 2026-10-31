@@ -24,6 +24,7 @@ _PINNED_PACKAGES = (
     "langgraph",
     "deepeval",
     "rank-bm25",
+    "snowballstemmer",
 )
 
 

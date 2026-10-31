@@ -1,6 +1,6 @@
 """Hashing, diff/bump inference and validator checks."""
 
-from agent.retriever import corpus_index
+from agent.retriever import corpus_index, load_passages
 from eval import constants as c
 from eval.versioning.diff import diff_cases, next_version
 from eval.versioning.hashing import content_hash, dataset_hash
@@ -9,8 +9,11 @@ from eval.versioning.schema import Case, CoreRegression, SourceRef
 from eval.versioning.validate import validate
 
 
+_P0 = load_passages()[0]  # any real passage of the current corpus
+
+
 def make(cid="QA-0001", q="What is the fee?", out="USD 10", sources=None, **kw):
-    srcs = sources if sources is not None else [SourceRef(doc_id="MSA-ACME", passage_id="MSA-ACME-03")]
+    srcs = sources if sources is not None else [SourceRef(doc_id=_P0.doc_id, passage_id=_P0.passage_id)]
     return Case(case_id=cid, question=q, expected_output=out, expected_sources=srcs,
                 category=kw.pop("category", c.CATEGORY_LOOKUP), added_in="1.0.0", **kw)
 
@@ -72,7 +75,7 @@ def test_validator_catches_problems():
     idx = corpus_index()
     a = make("QA-0001")
     dup = make("QA-0002")  # same content as QA-0001
-    bad_src = make("QA-0003", q="X?", sources=[SourceRef(doc_id="MSA-ACME", passage_id="MSA-ACME-99")])
+    bad_src = make("QA-0003", q="X?", sources=[SourceRef(doc_id=_P0.doc_id, passage_id=_P0.doc_id + "-9999")])
     orphan = make("QA-0004", q="Y?", supersedes="QA-0001")  # supersedes an active case
     cases = rehash_cases([a, dup, bad_src, orphan])
     checks = {i.check for i in _errors(validate(cases, core, idx, check_manifest=False))}

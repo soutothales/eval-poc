@@ -10,6 +10,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
+
+import snowballstemmer
 from rank_bm25 import BM25Okapi
 
 from agent import constants as c
@@ -61,8 +64,13 @@ class Passage:
         )
 
 
+_STEMMER = snowballstemmer.stemmer(c.STEMMER_LANGUAGE)
+
+
 def tokenize(text: str) -> List[str]:
-    """Lowercase and split text into alphanumeric tokens without stopwords.
+    """Lowercase, split into alphanumeric tokens, drop stopwords and stem.
+
+    Stemming makes "governs" match "governed" and "laws" match "law".
 
     Parameters
     ----------
@@ -72,9 +80,26 @@ def tokenize(text: str) -> List[str]:
     Returns
     -------
     List[str]
-        Tokens.
+        Stemmed tokens.
     """
-    return [t for t in re.findall(c.TOKEN_PATTERN, text.lower()) if t not in _STOPWORDS]
+    return [_stem(t) for t in re.findall(c.TOKEN_PATTERN, text.lower()) if t not in _STOPWORDS]
+
+
+@lru_cache(maxsize=None)
+def _stem(word: str) -> str:
+    """Memoized stemming; the vocabulary is far smaller than the token stream.
+
+    Parameters
+    ----------
+    word: str
+        Lower-case token.
+
+    Returns
+    -------
+    str
+        Stem.
+    """
+    return _STEMMER.stemWord(word)
 
 
 def load_passages(path: Path = c.CORPUS_PATH) -> List[Passage]:
@@ -150,7 +175,15 @@ def corpus_version(path: Path = c.CORPUS_PATH) -> str:
 
 
 class BM25Retriever:
-    """Lexical retriever over contract passages.
+    """Two-stage lexical retriever: pick the contract(s), then the passages.
+
+    Stage 1 scores contract titles against the question (BM25 over one title per
+    contract) and keeps the best contract plus any within ``DOC_SCORE_RATIO`` of
+    it, up to ``MAX_DOCS``. Stage 2 ranks the passages of those contracts with
+    BM25 over section and text, using the question minus the words that only
+    name the contract. With several contracts (comparison questions), results
+    are interleaved so each contract is represented. If no title matches, it
+    falls back to plain BM25 over all passages.
 
     Parameters
     ----------
@@ -158,13 +191,45 @@ class BM25Retriever:
         Passages to index.
     """
 
+    DOC_SCORE_RATIO = 0.6
+    MAX_DOCS = 3
+
     def __init__(self, passages: List[Passage]) -> None:
         self._passages = passages
-        corpus_tokens = [tokenize(f"{p.title} {p.section} {p.text}") for p in passages]
-        self._bm25 = BM25Okapi(corpus_tokens)
+        self._doc_ids: List[str] = []
+        self._doc_titles: Dict[str, List[str]] = {}
+        self._doc_rows: Dict[str, List[int]] = {}
+        for i, p in enumerate(passages):
+            if p.doc_id not in self._doc_rows:
+                self._doc_ids.append(p.doc_id)
+                self._doc_titles[p.doc_id] = tokenize(p.title)
+                self._doc_rows[p.doc_id] = []
+            self._doc_rows[p.doc_id].append(i)
+        self._title_bm25 = BM25Okapi([self._doc_titles[d] or ["_"] for d in self._doc_ids])
+        self._text_bm25 = BM25Okapi([tokenize(f"{p.section} {p.text}") or ["_"] for p in passages])
+
+    def _candidate_docs(self, tokens: List[str]) -> List[str]:
+        """Contracts whose title matches the question.
+
+        Parameters
+        ----------
+        tokens: List[str]
+            Query tokens.
+
+        Returns
+        -------
+        List[str]
+            doc_ids in score order; empty when no title matches.
+        """
+        scores = self._title_bm25.get_scores(tokens)
+        best = float(np.max(scores)) if len(scores) else 0.0
+        if best <= 0:
+            return []
+        order = np.argsort(-scores)[: self.MAX_DOCS]
+        return [self._doc_ids[i] for i in order if scores[i] >= self.DOC_SCORE_RATIO * best]
 
     def retrieve(self, query: str, top_k: int) -> List[Passage]:
-        """Return the top-k passages with a positive BM25 score.
+        """Return up to top-k passages with a positive score.
 
         Parameters
         ----------
@@ -178,9 +243,26 @@ class BM25Retriever:
         List[Passage]
             Passages in rank order; may be shorter than ``top_k``.
         """
-        scores = self._bm25.get_scores(tokenize(query))
-        ranked = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
-        return [self._passages[i] for i in ranked[:top_k] if scores[i] > 0]
+        tokens = tokenize(query)
+        docs = self._candidate_docs(tokens)
+        if not docs:
+            scores = self._text_bm25.get_scores(tokens)
+            ranked = np.argsort(-scores)[:top_k]
+            return [self._passages[i] for i in ranked if scores[i] > 0]
+
+        title_words = set().union(*(self._doc_titles[d] for d in docs))
+        content = [t for t in tokens if t not in title_words] or tokens
+        scores = self._text_bm25.get_scores(content)
+        per_doc = [
+            [i for i in sorted(self._doc_rows[d], key=lambda i: -scores[i]) if scores[i] > 0]
+            for d in docs
+        ]
+        merged: List[int] = []
+        for rank in range(max((len(r) for r in per_doc), default=0)):
+            for rows in per_doc:
+                if rank < len(rows):
+                    merged.append(rows[rank])
+        return [self._passages[i] for i in merged[:top_k]]
 
 
 @lru_cache(maxsize=1)

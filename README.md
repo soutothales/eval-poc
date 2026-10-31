@@ -19,8 +19,12 @@ datasets/ (versioned) ──► run (phase 1) ──► agent under test (pinned
                               compare / gate / report / history (DuckDB) ◄┘
 ```
 
-The corpus is **fictional** (five contracts of an invented company, Northwind
-Analytics), so the repo is safe to publish.
+The corpus is **CUAD v1** (Contract Understanding Atticus Dataset): 510 real
+commercial contracts from public SEC filings, split into 27,564 passages, with
+CUAD's lawyer labels mapped to passage IDs (CC BY 4.0, see
+`agent/corpus/NOTICE.md`). Rebuild it with
+`python -m agent.ingest_cuad path/to/CUADv1.json`. Dataset v1.0.0 used a small
+fictional corpus; its 30 cases are kept in the file as deprecated lineage.
 
 ## Quickstart
 
@@ -81,9 +85,15 @@ The `Makefile` wraps these (`make run CONFIG=…`, `make gate A=… B=…`).
 
 ## Golden dataset versioning
 
-`datasets/cases.jsonl` holds 30 cases in five categories: lookup, multi-passage,
-aggregate, unanswerable and adversarial. `core_regression.json` is a frozen
-10-case subset for the current major version. `manifest.json` records the
+`datasets/cases.jsonl` holds 100 active cases (v2.0.0) in five categories:
+40 lookup, 20 multi-passage, 10 aggregate (two contracts compared), 20
+unanswerable (CUAD labels the clause as absent) and 10 adversarial (false
+premises about governing law, and prompt injections attached to real
+questions). They are generated from CUAD's labels by
+`python -m scripts.build_cuad_golden` (templates in
+`scripts/cuad_templates.yaml`), so expected sources are exact and expected
+outputs quote the labelled contract language. `core_regression.json` is a
+frozen 12-case subset for the current major version. `manifest.json` records the
 semantic version, dataset hash, corpus version, core-subset hash, counts and
 changelog. Releases are git tags.
 
@@ -172,11 +182,15 @@ or switch the judge to Sonnet. `summary.json` reports the exact judge cost.
 - **No temperature control** on current models: judge determinism comes from
   explicit evaluation steps and unambiguous rubrics, so measure judge noise
   before trusting small deltas.
-- **30 cases** is enough to show the concept, not to detect small regressions.
-  Per-category CIs are wide; that is visible in the report.
-- **Lexical retrieval (BM25)** is deliberate: no embedding download, fully
-  deterministic. It is weak on aggregate questions, which makes the
+- **100 cases** is enough to show the concept, not to detect small
+  regressions. Per-category CIs are wide; that is visible in the report.
+- **Lexical retrieval** is deliberate: no embedding download, fully
+  deterministic. It is two-stage BM25 with stemming (pick the contract named in
+  the question, then rank its passages). Offline it reaches about 0.62 passage
+  hit rate@5 overall and 0.35 on aggregate questions, which makes the
   per-category story clearer.
+- **Generated expected outputs** quote CUAD's labelled spans verbatim. They are
+  exact but long; the correctness judge compares facts, not wording.
 
 ## From POC to production
 
@@ -192,7 +206,7 @@ or switch the judge to Sonnet. `summary.json` reports the exact judge cost.
 ## Layout
 
 ```
-agent/        constants, llm (Claude factory + offline fake), retriever (BM25), graph, corpus/, prompts/
+agent/        constants, llm (Claude factory + offline fake), retriever (two-stage BM25), graph, ingest_cuad, corpus/, prompts/
 eval/
   constants.py
   versioning/  schema, hashing, manifest, diff, validate, release
@@ -202,5 +216,6 @@ eval/
   score.py     phase 2
   deterministic.py, pricing.py, summary.py, compare.py, gate.py, report.py, noise.py, store.py
   run_manifest.py, gitutil.py, io.py, cli.py
+scripts/      build_cuad_golden.py, cuad_templates.yaml
 configs/  datasets/  pricing/  runs/  reports/  tests/
 ```
