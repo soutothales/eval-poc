@@ -8,7 +8,7 @@ CORPUS_PATH = AGENT_DIR / "corpus" / "passages.jsonl"
 PROMPTS_DIR = AGENT_DIR / "prompts"
 
 # --- Environment -----------------------------------------------------------
-ENV_ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
+ENV_LLM_PROVIDER_KEY = "LLM_PROVIDER_KEY"
 ENV_FILE_NAME = ".env"
 
 # --- Providers -------------------------------------------------------------

@@ -1,6 +1,6 @@
-"""Chat model factory: Claude through the Anthropic API, or an offline fake.
+"""Chat model factory: LLM Provider API, or an offline fake.
 
-The API key is read from the ``ANTHROPIC_API_KEY`` environment variable, which
+The API key is read from the ``LLM_PROVIDER_KEY`` environment variable, which
 is loaded from a ``.env`` file at the project root if present.
 """
 
@@ -23,11 +23,11 @@ load_dotenv(_ROOT / c.ENV_FILE_NAME)
 
 
 class MissingApiKeyError(RuntimeError):
-    """Raised when an Anthropic model is requested without an API key."""
+    """Raised when an LLM provider model is requested without an API key."""
 
 
 def get_api_key() -> str:
-    """Return the Anthropic API key from the environment.
+    """Return the LLM provider API key from the environment.
 
     Returns
     -------
@@ -37,13 +37,13 @@ def get_api_key() -> str:
     Raises
     ------
     MissingApiKeyError
-        If ``ANTHROPIC_API_KEY`` is not set.
+        If ``LLM_PROVIDER_KEY`` is not set.
     """
-    key = os.environ.get(c.ENV_ANTHROPIC_API_KEY, "").strip()
+    key = os.environ.get(c.ENV_LLM_PROVIDER_KEY, "").strip()
     if not key:
         raise MissingApiKeyError(
-            f"{c.ENV_ANTHROPIC_API_KEY} is not set. Copy .env.example to .env "
-            "and add your Claude API key, or use configs/offline.yaml."
+            f"{c.ENV_LLM_PROVIDER_KEY} is not set. Copy .env.example to .env "
+            "and add your LLM provider API key, or use configs/offline.yaml."
         )
     return key
 

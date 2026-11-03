@@ -28,10 +28,13 @@ fictional corpus; its 30 cases are kept in the file as deprecated lineage.
 
 ## Quickstart
 
+Requires conda ([installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)).
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
+conda create -n eval-poc python=3.11 -y
+conda activate eval-poc
 pip install -r requirements.txt
-cp .env.example .env            # then put your key in ANTHROPIC_API_KEY
+cp .env.example .env            # then put your key in LLM Provider Key
 make test                       # 17 tests, no API calls
 
 python -m eval.cli ask "What is the liability cap under the Acme MSA in dollars?"
@@ -48,7 +51,7 @@ python -m eval.cli gate RUN_A RUN_B                              # fails: retrie
 python -m eval.cli report RUN_A RUN_B                            # reports/report_*.html
 ```
 
-## The demo for the article: four runs
+## The demo: four runs
 
 | # | Command | What it shows |
 |---|---|---|
@@ -59,6 +62,9 @@ python -m eval.cli report RUN_A RUN_B                            # reports/repor
 
 `python -m eval.cli history` prints the trend across all runs (DuckDB over
 `runs/*/cases.parquet`, the local stand-in for S3 + Athena).
+
+**Why DuckDB:** it runs SQL directly on the Parquet files, with no server or
+loading step, and the same queries carry over to Athena in production.
 
 A useful decision rule to state in the write-up: *switch models only if
 correctness is within 1 point (CI overlapping zero) and cost per correct answer
@@ -173,7 +179,7 @@ full scored run costs on the order of a few dollars, and scoring repeats
 multiplies that. While iterating, use `--core-only`, `--limit`, `--repeats 1`,
 or switch the judge to Sonnet. `summary.json` reports the exact judge cost.
 
-## Honest caveats (worth stating in the article)
+## Honest caveats
 
 - **Same provider for agent and judge.** The judge is a different, larger
   model, but the same family. A production setup should calibrate the judge
